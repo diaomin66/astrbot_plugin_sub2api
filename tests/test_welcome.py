@@ -41,6 +41,43 @@ def test_template_literals():
     assert validate_template("欢迎 {{新人}} {at}") == "欢迎 {{新人}} {at}"
 
 
+def test_custom_welcome_preserved_in_markdown(tmp_path):
+    async def run():
+        template = "欢迎 {at} 加入Orbitix AI 交流群！\n站点：{site_url}\n发送 /额度帮助"
+        api = SimpleNamespace(post_group_message=AsyncMock())
+        sender = WelcomeSender(settings(template=template), tmp_path / "w.db", logging.getLogger())
+        assert await sender.handle(event(), api)
+        kwargs = api.post_group_message.call_args.kwargs
+        assert kwargs["msg_type"] == 2
+        assert kwargs["markdown"] == {
+            "content": (
+                '欢迎 <qqbot-at-user id="member-a" /> 加入Orbitix AI 交流群！\n'
+                "站点：https://sub2api.example.test\n发送 /额度帮助"
+            )
+        }
+        assert "content" not in kwargs
+        assert kwargs["event_id"] == "event-1" and kwargs["msg_seq"] == 1
+
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize("failure", [TimeoutError, RuntimeError])
+def test_markdown_failure_never_leaks_tag_through_plain_fallback(tmp_path, failure):
+    async def run():
+        api = SimpleNamespace(post_group_message=AsyncMock(side_effect=failure))
+        path = tmp_path / "w.db"
+        sender = WelcomeSender(settings(), path, logging.getLogger())
+        payload = event()
+        assert not await sender.handle(payload, api)
+        reloaded = WelcomeSender(settings(), path, logging.getLogger())
+        assert not await reloaded.handle(payload, api)
+        api.post_group_message.assert_awaited_once()
+        kwargs = api.post_group_message.call_args.kwargs
+        assert kwargs["msg_type"] == 2 and "content" not in kwargs
+
+    asyncio.run(run())
+
+
 def test_welcome_true_event_persistent_dedup(tmp_path):
     async def run():
         path = tmp_path / "welcome.sqlite3"
@@ -54,8 +91,10 @@ def test_welcome_true_event_persistent_dedup(tmp_path):
         api.post_group_message.assert_awaited_once()
         kwargs = api.post_group_message.call_args.kwargs
         assert kwargs["group_openid"] == "group-a"
-        assert '<qqbot-at-user id="member-a" />' in kwargs["content"]
-        assert "https://sub2api.example.test" in kwargs["content"]
+        assert kwargs["msg_type"] == 2
+        assert "content" not in kwargs and "ark" not in kwargs
+        assert '<qqbot-at-user id="member-a" />' in kwargs["markdown"]["content"]
+        assert "https://sub2api.example.test" in kwargs["markdown"]["content"]
         assert kwargs["event_id"] == "event-1"
 
     asyncio.run(run())

@@ -76,7 +76,9 @@ class WelcomeSender:
         if not inserted:
             return False
         # Reserve durably BEFORE sending: never resend an ambiguous timeout after reload.
-        kwargs = dict(group_openid=group, msg_type=0, content=text, msg_seq=1)
+        # QQ group @user tags are parsed only in Markdown messages. Never put
+        # this markup in plain content, including after an uncertain send.
+        kwargs = dict(group_openid=group, msg_type=2, markdown={"content": text}, msg_seq=1)
         event_id = payload.get("id")
         if isinstance(event_id, str) and re.fullmatch(r"[A-Za-z0-9_:/.-]{1,256}", event_id):
             kwargs["event_id"] = event_id

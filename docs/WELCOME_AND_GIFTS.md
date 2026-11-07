@@ -17,6 +17,9 @@ AstrBot → 插件 → Sub2API 账号与互动 → 配置 → `welcome`：
 - `data/plugin_data/astrbot_plugin_sub2api/welcomes.sqlite3` 持久化事件去重；忽略过期/异常事件。
   发送前先预留去重键，超时结果不确定时不自动重发，避免重载刷屏。真实退群后再次入群会产生新事件。
 - `{at}` 渲染为 QQ 官方 `<qqbot-at-user id="..." />`，不猜测真实 QQ 号或昵称。
+  v0.4.1 起通过 `msg_type=2` / `markdown.content` 发送，而不是纯文本 `content`，
+  避免把 @ 标签原样展示给用户。保留自定义模板、事件回复标识与持久化去重。
+  发送失败不会把含标签的内容降级为纯文本重发，也不重复发送结果不确定的消息。
 
 官方事件定义（2026-11-07 核对）：
 https://bot.q.qq.com/wiki/develop/api-v2/autogen/event/group_member_add.html
