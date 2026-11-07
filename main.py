@@ -15,12 +15,28 @@ class Sub2APIPlugin(Star):
         self.config = config
         self.settings = None
         self.client = None
+        self.welcome_listener = None
         try:
             self.settings = Settings.from_mapping(config)
             self.client = BridgeClient(self.settings)
         except ConfigError as exc:
             # Validation messages name fields only; do not log tokens, emails or payloads.
             logger.warning("Sub2API plugin configuration is incomplete: %s", exc)
+
+    async def initialize(self):
+        if self.settings is None or not self.settings.welcome_enabled:
+            return
+        from astrbot.api.star import StarTools
+
+        from .welcome import WelcomeListener, WelcomeSender
+
+        sender = WelcomeSender(
+            self.settings,
+            StarTools.get_data_dir("astrbot_plugin_sub2api") / "welcomes.sqlite3",
+            logger,
+        )
+        self.welcome_listener = WelcomeListener(self.context, self.settings, sender, logger)
+        self.welcome_listener.start()
 
     def accepts(self, event: AstrMessageEvent) -> bool:
         if event.get_platform_name() not in OFFICIAL_PLATFORMS:
@@ -150,5 +166,7 @@ class Sub2APIPlugin(Star):
         yield event.plain_result(render_help(self.settings)).stop_event()
 
     async def terminate(self):
+        if self.welcome_listener is not None:
+            await self.welcome_listener.stop()
         if self.client is not None:
             await self.client.close()

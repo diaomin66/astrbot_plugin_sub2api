@@ -110,6 +110,27 @@ def quip(kind: str, context: ReplyContext) -> str:
     return choices[index % len(choices)]
 
 
+def gift_line(data: dict) -> str:
+    gift = data.get("binding_gift")
+    if gift is None:
+        return ""
+    if not isinstance(gift, dict) or gift.get("state") not in {
+        "credited",
+        "processing",
+        "review_required",
+        "failed",
+    }:
+        raise protocol_error()
+    value = money(gift, "amount")
+    if amount(gift["amount"]) != 2:
+        raise protocol_error()
+    if gift["state"] == "credited":
+        return f"🎁 首绑新人礼：${value} 已到账！每个站内账号仅领一次，开局有粮啦 ✨\n"
+    if gift["state"] == "processing":
+        return f"🎁 首绑新人礼：${value} 发放处理中，稍后查账即可，不用重新绑定。\n"
+    return "🧾 新人礼尚未确认到账，请管理员核对流水；不要解绑重领。\n"
+
+
 def render(action: str, data: dict, *, context: ReplyContext | None = None) -> str:
     context = context or ReplyContext()
     if action == "stats":
@@ -211,6 +232,7 @@ def render(action: str, data: dict, *, context: ReplyContext | None = None) -> s
             "✅ 绑定已生效！你的小金库快报来啦\n"
             + scope_line(context)
             + site_line(context)
+            + gift_line(data)
             + f"💰 可用额度：{money(data, 'balance')}\n📅 今日签到：{checkin}\n"
             + f"🛡️ 护盾：{shield_text}\n⏳ 打劫冷却：{cooldown_text}\n"
             + (

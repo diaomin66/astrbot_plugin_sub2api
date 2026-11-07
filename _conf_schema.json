@@ -166,5 +166,21 @@
         "hint": "仅 AstrBot 管理员且匹配 bridge 服务端身份白名单可用；管理员 Key 只存服务端。/充值 @已绑定群友或邮箱 金额"
       }
     }
+  },
+  "welcome": {
+    "description": "新人入群欢迎（QQ 官方 GROUP_MEMBER_ADD 事件）",
+    "type": "object",
+    "items": {
+      "enabled": {
+        "description": "启用真实入群事件欢迎；需 QQ 平台授予群成员事件与群发消息权限。启用时现有 QQ 连接会重新鉴权一次。",
+        "type": "bool",
+        "default": false
+      },
+      "template": {
+        "description": "自定义欢迎语，仅支持 {at}（@新人）、{site_url}（站点）。新人礼由配套 bridge 后端开关控制，不由欢迎语发放。",
+        "type": "text",
+        "default": "🎉 欢迎 {at} 加入小金库！\n🌐 站点：{site_url}\n🔗 先发送 /绑定 你的站内邮箱，再到站内亲自确认。\n🎁 首次确认绑定的站内账号可获 2 美元新人礼；每个账号仅一次，历史绑定不补发。\n📅 每天 /签到 领惊喜，🗡️ /打劫 @群友 试手气，📊 /战绩 看战果！\n输入 /额度帮助 查看玩法，祝你玩得开心 ✨"
+      }
+    }
   }
 }

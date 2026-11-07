@@ -77,9 +77,14 @@ class Settings:
     allow_group_binding: bool
     policy: dict
     recharge_enabled: bool = False
+    welcome_enabled: bool = False
+    welcome_template: str = ""
 
     @classmethod
     def from_mapping(cls, config: Mapping) -> Settings:
+        from .welcome import DEFAULT_TEMPLATE, validate_template
+
+        welcome = section(config, "welcome")
         connection = section(config, "connection")
         binding = section(config, "binding")
         checkin = section(config, "checkin")
@@ -152,4 +157,6 @@ class Settings:
             allow_group_binding=boolean(binding, "allow_group_binding", True),
             policy=policy,
             recharge_enabled=boolean(section(config, "recharge"), "enabled", False),
+            welcome_enabled=boolean(welcome, "enabled", False),
+            welcome_template=validate_template(welcome.get("template", DEFAULT_TEMPLATE)),
         )
