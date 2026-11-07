@@ -76,6 +76,7 @@ class Settings:
     timeout_seconds: int
     allow_group_binding: bool
     policy: dict
+    recharge_enabled: bool = False
 
     @classmethod
     def from_mapping(cls, config: Mapping) -> Settings:
@@ -150,4 +151,5 @@ class Settings:
             timeout_seconds=integer(connection, "timeout_seconds", 10, 1, 60),
             allow_group_binding=boolean(binding, "allow_group_binding", True),
             policy=policy,
+            recharge_enabled=boolean(section(config, "recharge"), "enabled", False),
         )

@@ -13,7 +13,13 @@ import aiohttp
 from .config import Settings
 
 MAX_RESPONSE_BYTES = 65536
-ROUTES = {"bind": "/bindings/request", "account": "/account", "checkin": "/checkin", "robbery": "/robbery"}
+ROUTES = {
+    "bind": "/bindings/request",
+    "account": "/account",
+    "checkin": "/checkin",
+    "robbery": "/robbery",
+    "recharge": "/recharge",
+}
 
 
 class BridgeError(Exception):
@@ -73,14 +79,16 @@ class BridgeClient:
                         if response.status in {502, 503, 504} and attempt == 0:
                             await asyncio.sleep(0.2)
                             continue
-                        if response.status in {401, 403}:
-                            raise BridgeError("UNAUTHORIZED")
                         if 300 <= response.status < 400:
                             raise BridgeError("REDIRECT_REFUSED")
-                        if response.status == 404:
-                            raise BridgeError("BRIDGE_NOT_INSTALLED")
                         if response.status >= 500:
                             raise BridgeError("UNAVAILABLE")
+                        fallback = {
+                            401: "UNAUTHORIZED",
+                            403: "UNAUTHORIZED",
+                            404: "BRIDGE_NOT_INSTALLED",
+                            429: "RATE_LIMITED",
+                        }.get(response.status)
                         chunks = bytearray()
                         async for chunk in response.content.iter_chunked(8192):
                             chunks.extend(chunk)
@@ -89,8 +97,8 @@ class BridgeClient:
                         try:
                             result = json.loads(chunks)
                         except (ValueError, UnicodeError) as exc:
-                            if response.status == 429:
-                                raise BridgeError("RATE_LIMITED") from exc
+                            if fallback:
+                                raise BridgeError(fallback) from exc
                             raise protocol_error() from exc
                         if not isinstance(result, dict):
                             raise protocol_error()
@@ -109,8 +117,11 @@ class BridgeClient:
                             if type(seconds) is not int or not 0 <= seconds <= 31536000:
                                 raise protocol_error()
                             raise BridgeError(code, seconds)
-                        if response.status == 429:
-                            raise BridgeError("RATE_LIMITED")
+                        # Valid business errors take precedence over generic HTTP fallbacks.
+                        if not 200 <= response.status < 300 and result.get("ok") is True:
+                            raise protocol_error()
+                        if fallback:
+                            raise BridgeError(fallback)
                         if not 200 <= response.status < 300 or result.get("ok") is not True:
                             raise protocol_error()
                         if not isinstance(result.get("data"), dict):

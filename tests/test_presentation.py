@@ -46,6 +46,27 @@ def test_tls_error_does_not_suggest_disabling_verification():
 
 
 @pytest.mark.parametrize(
+    "code,expected",
+    [("ADMIN_REQUIRED", "充值权限不足"), ("TARGET_NOT_FOUND", "核对邮箱"), ("APP_NOT_ALLOWED", "AppID")],
+)
+def test_permission_and_missing_target_errors_do_not_blame_token(code, expected):
+    result = render_error(BridgeError(code))
+    assert expected in result
+    assert "后端认证失败" not in result
+
+
+def test_billing_protection_explains_why_transfer_is_blocked():
+    result = render_error(BridgeError("ACCOUNT_BILLING_BUSY"))
+    assert "待核实账单" in result and "暂不能打劫" in result
+    assert "联系管理员" in result
+
+
+def test_economy_gate_does_not_claim_credit_or_transfer():
+    result = render_error(BridgeError("ECONOMY_NOT_READY"))
+    assert "不会发放或转移" in result
+
+
+@pytest.mark.parametrize(
     "action,data",
     [
         ("bind", {"state": "pending", "verification_code": "<script>", "expires_in_seconds": 600}),

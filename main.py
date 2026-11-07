@@ -5,7 +5,7 @@ from astrbot.api.star import Context, Star
 
 from .bridge import BridgeClient, BridgeError
 from .config import ConfigError, Settings
-from .identity import OFFICIAL_PLATFORMS, InputError, binding_email, identify, robbery_target
+from .identity import OFFICIAL_PLATFORMS, InputError, binding_email, identify, recharge_input, robbery_target
 from .presentation import ERROR_MESSAGES, duration, render, render_error
 
 
@@ -33,7 +33,13 @@ class Sub2APIPlugin(Star):
         try:
             identity = identify(event, self.settings)
             payload = {"actor": identity.actor, "context": identity.context, "policy": self.settings.policy}
-            if action == "bind":
+            if action == "recharge":
+                if not callable(getattr(event, "is_admin", None)) or event.is_admin() is not True:
+                    return "充值仅允许 AstrBot 管理员操作，群管理员身份不等于机器人管理员。"
+                if not self.settings.recharge_enabled:
+                    return "管理员充值功能已关闭。请先配置 bridge 服务端管理员白名单，再开启插件充值开关。"
+                payload.update(recharge_input(event, identity, At))
+            elif action == "bind":
                 if identity.is_group and not self.settings.allow_group_binding:
                     return "管理员已关闭群内邮箱绑定。请在站内验证群身份，或联系管理员；私聊绑定不会自动关联群身份。"
                 payload["email"] = binding_email(event.get_message_str())
@@ -89,6 +95,14 @@ class Sub2APIPlugin(Star):
         event.stop_event()
         yield event.plain_result(await self.execute("account", event)).stop_event()
 
+    @filter.command("充值")
+    async def recharge(self, event: AstrMessageEvent):
+        """管理员充值：/充值 @已绑定群友或站内邮箱 金额。"""
+        if not self.accepts(event):
+            return
+        event.stop_event()
+        yield event.plain_result(await self.execute("recharge", event)).stop_event()
+
     @filter.command("额度帮助", alias={"sub2api帮助"})
     async def help_command(self, event: AstrMessageEvent):
         if not self.accepts(event):
@@ -101,6 +115,7 @@ class Sub2APIPlugin(Star):
             "/打劫 @群友：功能开放且双方已绑定后参与，成功获得额度，失败赔偿对方\n"
             "/我的账号：绑定、额度、签到及冷却信息\n"
             "/护盾 或 /冷却：查询保护和打劫剩余时间\n"
+            "/充值 @已绑定群友 金额 或 /充值 站内邮箱 金额：仅机器人管理员，且须列入服务端白名单\n"
             "群内发送邮箱/查询余额会被群友看到。群聊、私聊身份需分别验证。"
         )
         if self.settings:

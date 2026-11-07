@@ -32,6 +32,24 @@ def duration(value: int) -> str:
 
 
 def render(action: str, data: dict) -> str:
+    if action in {"checkin", "robbery", "recharge"} and data.get("state") in {
+        "processing",
+        "review_required",
+        "refunded",
+    }:
+        messages = {
+            "processing": "交易处理中，尚未确认完成。请勿重新发送充值或打劫，稍后查询账号或联系管理员。",
+            "review_required": "交易结果待管理员对账，已阻止自动重复记账。请勿重新发起充值或打劫。",
+            "refunded": "转账未完成，已确认退回扣款；本次没有完成打劫转账。",
+        }
+        reference = data.get("operation_id", "")
+        if not isinstance(reference, str) or not re.fullmatch(r"[0-9a-f-]{36}", reference):
+            raise protocol_error()
+        return messages[data["state"]] + "\n流水号：" + reference
+    if action == "recharge":
+        if data.get("state") != "credited":
+            raise protocol_error()
+        return f"充值成功！增加额度：{money(data, 'amount')}\n目标当前可用额度：{money(data, 'balance')}"
     if action == "bind":
         if data.get("state") != "pending":
             raise protocol_error()
@@ -93,12 +111,19 @@ ERROR_MESSAGES = {
     "NOT_BOUND": "你还没有完成绑定，请发送 /绑定 邮箱 并到站内确认。",
     "BINDING_PENDING": "绑定尚未确认，请登录 Sub2API，在「个人设置 → 管理 QQ 绑定」弹窗中手动输入确认码。",
     "ALREADY_BOUND": "当前 QQ 身份已绑定；换绑或解绑请在 Sub2API 账号设置中操作。",
-    "TARGET_NOT_BOUND": "对方还没有完成绑定，无法打劫。",
+    "TARGET_NOT_BOUND": "对方还没有完成绑定，无法执行此操作。",
+    "ADMIN_REQUIRED": "充值权限不足：须为机器人管理员，且 QQ 身份须列入 bridge 服务端充值白名单。",
+    "APP_NOT_ALLOWED": "机器人应用未获后端授权，请管理员检查 bridge 令牌允许的 AppID。",
+    "TARGET_NOT_FOUND": "未找到该站内账号，请核对邮箱。",
+    "ACCOUNT_TRANSACTION_PENDING": "相关账号存在未完成额度交易，请等待恢复或联系管理员对账，勿重复发起。",
+    "ADMIN_API_UNAVAILABLE": "管理员余额接口暂不可用，尚未确认记账结果，请联系管理员查询流水。",
     "SAME_ACCOUNT": "不能打劫自己或绑定到同一 Sub2API 账号的身份。",
     "TARGET_SHIELDED": "对方受到护盾保护，暂时不能打劫。",
     "ROBBERY_COOLDOWN": "你还处于打劫冷却中。",
     "INSUFFICIENT_BALANCE": "你的可用额度不足以覆盖最低失败赔偿，无法发起打劫。",
     "TARGET_EMPTY": "对方没有可被打劫的额度。",
+    "ACCOUNT_BILLING_BUSY": "你或对方仍有模型请求、图片预留或待核实账单，暂不能打劫，避免转走已用于消费的额度。请等待结算后再试；长时间未恢复请联系管理员核对账单。",
+    "ECONOMY_NOT_READY": "签到/打劫的计费保护尚未完成上线验收，当前不会发放或转移额度。请管理员检查服务端经济功能状态。",
     "ACCOUNT_DISABLED": "账号不可用，请到 Sub2API 查看状态。",
     "FEATURE_DISABLED": "服务端尚未开放该功能。仅开启插件开关不会生效，请等待服务端完成验收并开放。",
     "RATE_LIMITED": "操作过于频繁，请稍后再试。",

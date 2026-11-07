@@ -144,6 +144,52 @@ def test_http_failures(status, code):
     asyncio.run(run())
 
 
+@pytest.mark.parametrize(
+    "status,code",
+    [(403, "ADMIN_REQUIRED"), (403, "APP_NOT_ALLOWED"), (404, "TARGET_NOT_FOUND")],
+)
+def test_http_business_errors_take_precedence_without_retry(status, code):
+    async def run():
+        calls = []
+
+        async def handler(request):
+            calls.append(request.path)
+            return web.json_response(
+                {"ok": False, "error": {"code": code, "retry_after_seconds": 12}}, status=status
+            )
+
+        async with server(handler) as client:
+            with pytest.raises(BridgeError) as error:
+                await client.request("recharge", payload())
+            assert error.value.code == code
+            assert error.value.retry_after == 12
+        assert len(calls) == 1
+
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize("status", [401, 403, 404, 429])
+@pytest.mark.parametrize(
+    "body",
+    [
+        {"ok": True, "data": {"state": "credited"}},
+        {"ok": False, "error": {"code": "private-token"}},
+        {"ok": False, "error": {"code": "ADMIN_REQUIRED", "retry_after_seconds": True}},
+        {"ok": False, "error": []},
+    ],
+)
+def test_invalid_error_envelopes_never_report_success(status, body):
+    async def run():
+        async def handler(request):
+            return web.json_response(body, status=status)
+
+        async with server(handler) as client:
+            with pytest.raises(BridgeError, match="INVALID_RESPONSE"):
+                await client.request("recharge", payload())
+
+    asyncio.run(run())
+
+
 def test_business_error_is_not_retried():
     async def run():
         calls = []

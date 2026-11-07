@@ -3,45 +3,168 @@
     "description": "Sub2API 连接（必须先安装 bridge 扩展）",
     "type": "object",
     "items": {
-      "base_url": {"description": "Sub2API 站点地址", "type": "string", "default": "", "hint": "例如 https://api.example.com，不要包含 /api/v1；允许站点子路径。"},
-      "bridge_token": {"description": "专用 bridge 服务令牌", "type": "string", "default": "", "secret": true, "hint": "至少 32 位随机字符，禁止使用全权管理员 Key。只授权 QQ bridge 操作。"},
-      "token_env": {"description": "优先读取令牌的环境变量名", "type": "string", "default": "SUB2API_QQ_BRIDGE_TOKEN", "hint": "若环境变量未设置则使用上面的服务令牌。"},
-      "qq_app_id": {"description": "QQ 官方机器人 AppID", "type": "string", "default": "", "hint": "必须与选定 AstrBot 平台实例的 QQ AppID 一致；服务端令牌也须绑定此 AppID。"},
-      "platform_id": {"description": "AstrBot 平台实例 ID", "type": "string", "default": "", "hint": "填写消息平台页面里此 QQ 官方机器人实例的 id，不是群号或 QQ 号。仅处理此实例。"},
-      "timeout_seconds": {"description": "请求超时（秒）", "type": "int", "default": 10, "slider": {"min": 1, "max": 60, "step": 1}},
-      "allow_insecure_http": {"description": "允许明文 HTTP（仅隔离的可信内网）", "type": "bool", "default": false, "hint": "公网必须关闭。HTTP 会明文传输服务令牌；HTTPS 始终校验证书。"}
+      "base_url": {
+        "description": "Sub2API 站点地址",
+        "type": "string",
+        "default": "",
+        "hint": "例如 https://api.example.com，不要包含 /api/v1；允许站点子路径。"
+      },
+      "bridge_token": {
+        "description": "专用 bridge 服务令牌",
+        "type": "string",
+        "default": "",
+        "secret": true,
+        "hint": "至少 32 位随机字符，禁止使用全权管理员 Key。只授权 QQ bridge 操作。"
+      },
+      "token_env": {
+        "description": "优先读取令牌的环境变量名",
+        "type": "string",
+        "default": "SUB2API_QQ_BRIDGE_TOKEN",
+        "hint": "若环境变量未设置则使用上面的服务令牌。"
+      },
+      "qq_app_id": {
+        "description": "QQ 官方机器人 AppID",
+        "type": "string",
+        "default": "",
+        "hint": "必须与选定 AstrBot 平台实例的 QQ AppID 一致；服务端令牌也须绑定此 AppID。"
+      },
+      "platform_id": {
+        "description": "AstrBot 平台实例 ID",
+        "type": "string",
+        "default": "",
+        "hint": "填写消息平台页面里此 QQ 官方机器人实例的 id，不是群号或 QQ 号。仅处理此实例。"
+      },
+      "timeout_seconds": {
+        "description": "请求超时（秒）",
+        "type": "int",
+        "default": 10,
+        "slider": {
+          "min": 1,
+          "max": 60,
+          "step": 1
+        }
+      },
+      "allow_insecure_http": {
+        "description": "允许明文 HTTP（仅隔离的可信内网）",
+        "type": "bool",
+        "default": false,
+        "hint": "公网必须关闭。HTTP 会明文传输服务令牌；HTTPS 始终校验证书。"
+      }
     }
   },
   "binding": {
     "description": "账号绑定",
     "type": "object",
     "items": {
-      "ttl_seconds": {"description": "站内确认有效期（秒）", "type": "int", "default": 600, "slider": {"min": 60, "max": 3600, "step": 60}},
-      "allow_group_binding": {"description": "允许群内提交绑定邮箱", "type": "bool", "default": true, "hint": "邮箱会被群成员看到。关闭后应自行提供站内群身份验证，私聊绑定不自动关联群身份。"}
+      "ttl_seconds": {
+        "description": "站内确认有效期（秒）",
+        "type": "int",
+        "default": 600,
+        "slider": {
+          "min": 60,
+          "max": 3600,
+          "step": 60
+        }
+      },
+      "allow_group_binding": {
+        "description": "允许群内提交绑定邮箱",
+        "type": "bool",
+        "default": true,
+        "hint": "邮箱会被群成员看到。关闭后应自行提供站内群身份验证，私聊绑定不自动关联群身份。"
+      }
     }
   },
   "checkin": {
     "description": "每日签到",
     "type": "object",
     "items": {
-      "enabled": {"description": "启用签到", "type": "bool", "default": false, "hint": "默认关闭。后端完成真实扣费、充值、预算和缓存一致性验收后才能开启；插件开关不能解锁后端功能。"},
-      "timezone": {"description": "签到自然日时区", "type": "string", "default": "Asia/Shanghai", "hint": "由服务端时间计算日期，不使用用户或机器人提交的日期。"},
-      "reward_min": {"description": "签到额度下限", "type": "string", "default": "0.10", "hint": "Sub2API 可用余额同单位，十进制字符串，最多 6 位小数；下限须大于零。"},
-      "reward_max": {"description": "签到额度上限", "type": "string", "default": "0.50"}
+      "enabled": {
+        "description": "启用签到",
+        "type": "bool",
+        "default": false,
+        "hint": "默认关闭。后端完成真实扣费、充值、预算和缓存一致性验收后才能开启；插件开关不能解锁后端功能。"
+      },
+      "timezone": {
+        "description": "签到自然日时区",
+        "type": "string",
+        "default": "Asia/Shanghai",
+        "hint": "由服务端时间计算日期，不使用用户或机器人提交的日期。"
+      },
+      "reward_min": {
+        "description": "签到额度下限",
+        "type": "string",
+        "default": "0.10",
+        "hint": "Sub2API 可用余额同单位，十进制字符串，最多 6 位小数；下限须大于零。"
+      },
+      "reward_max": {
+        "description": "签到额度上限",
+        "type": "string",
+        "default": "0.50"
+      }
     }
   },
   "robbery": {
     "description": "群内打劫与保护",
     "type": "object",
     "items": {
-      "enabled": {"description": "启用打劫", "type": "bool", "default": false, "hint": "默认关闭。后端完成资金预留、并发转账和缓存一致性验收后才能开启；不要仅修改数据库功能标志绕过验收。"},
-      "success_probability": {"description": "打劫成功概率（0～1）", "type": "string", "default": "0.40", "hint": "例如 0.40 表示 40%；由服务端安全随机数决定，插件不抽奖。"},
-      "success_min": {"description": "成功夺取额度下限", "type": "string", "default": "0.05"},
-      "success_max": {"description": "成功夺取额度上限", "type": "string", "default": "0.20", "hint": "从对方扣除并转给发起者，最多扣至对方余额为零。"},
-      "failure_min": {"description": "失败赔偿额度下限", "type": "string", "default": "0.01"},
-      "failure_max": {"description": "失败赔偿额度上限", "type": "string", "default": "0.05", "hint": "失败时从发起者转给目标；两项都设 0 可关闭赔偿。"},
-      "cooldown_seconds": {"description": "发起打劫冷却（秒）", "type": "int", "default": 3600, "hint": "有效打劫无论成功或失败都触发；0 关闭。后端按 Sub2API 账号记录，跨群共用。"},
-      "shield_seconds": {"description": "被打劫护盾持续时间（秒）", "type": "int", "default": 7200, "hint": "每次有效被打劫后获得护盾，无论结果；0 关闭。主动打劫解除自身护盾。"}
+      "enabled": {
+        "description": "启用打劫",
+        "type": "bool",
+        "default": false,
+        "hint": "默认关闭。后端完成资金预留、并发转账和缓存一致性验收后才能开启；不要仅修改数据库功能标志绕过验收。"
+      },
+      "success_probability": {
+        "description": "打劫成功概率（0～1）",
+        "type": "string",
+        "default": "0.40",
+        "hint": "例如 0.40 表示 40%；由服务端安全随机数决定，插件不抽奖。"
+      },
+      "success_min": {
+        "description": "成功夺取额度下限",
+        "type": "string",
+        "default": "0.05"
+      },
+      "success_max": {
+        "description": "成功夺取额度上限",
+        "type": "string",
+        "default": "0.20",
+        "hint": "从对方扣除并转给发起者，最多扣至对方余额为零。"
+      },
+      "failure_min": {
+        "description": "失败赔偿额度下限",
+        "type": "string",
+        "default": "0.01"
+      },
+      "failure_max": {
+        "description": "失败赔偿额度上限",
+        "type": "string",
+        "default": "0.05",
+        "hint": "失败时从发起者转给目标；两项都设 0 可关闭赔偿。"
+      },
+      "cooldown_seconds": {
+        "description": "发起打劫冷却（秒）",
+        "type": "int",
+        "default": 3600,
+        "hint": "有效打劫无论成功或失败都触发；0 关闭。后端按 Sub2API 账号记录，跨群共用。"
+      },
+      "shield_seconds": {
+        "description": "被打劫护盾持续时间（秒）",
+        "type": "int",
+        "default": 7200,
+        "hint": "每次有效被打劫后获得护盾，无论结果；0 关闭。主动打劫解除自身护盾。"
+      }
+    }
+  },
+  "recharge": {
+    "description": "管理员充值",
+    "type": "object",
+    "items": {
+      "enabled": {
+        "description": "启用管理员充值",
+        "type": "bool",
+        "default": false,
+        "hint": "仅 AstrBot 管理员且匹配 bridge 服务端身份白名单可用；管理员 Key 只存服务端。/充值 @已绑定群友或邮箱 金额"
+      }
     }
   }
 }
