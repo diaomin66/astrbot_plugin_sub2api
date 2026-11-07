@@ -78,6 +78,13 @@ def collect(handler, event):
     return asyncio.run(run())
 
 
+def economy_config():
+    source = config()
+    source["checkin"] = {"enabled": True}
+    source["robbery"] = {"enabled": True}
+    return source
+
+
 def test_binding_command(plugin_type):
     plugin = plugin_type(None, config())
     plugin.client = FakeBridge(
@@ -135,7 +142,7 @@ def test_group_binding_can_be_disabled(plugin_type):
 
 
 def test_robbery_passes_only_authenticated_target(plugin_type):
-    plugin = plugin_type(None, config())
+    plugin = plugin_type(None, economy_config())
     plugin.client = FakeBridge(
         {
             "outcome": "failure",
@@ -151,27 +158,27 @@ def test_robbery_passes_only_authenticated_target(plugin_type):
 
 
 def test_invalid_mention_never_calls_backend(plugin_type):
-    plugin = plugin_type(None, config())
+    plugin = plugin_type(None, economy_config())
     plugin.client = FakeBridge()
     assert "真实 @" in collect(plugin.robbery, Event("打劫 @fake"))[0].text
     assert not plugin.client.calls
 
 
 def test_unknown_error_does_not_leak_token(plugin_type, caplog):
-    plugin = plugin_type(None, config())
+    plugin = plugin_type(None, economy_config())
     plugin.client = FakeBridge(error=RuntimeError("secret-token"))
     assert "secret-token" not in collect(plugin.checkin, Event())[0].text
     assert "secret-token" not in caplog.text
 
 
 def test_backend_error_translated(plugin_type):
-    plugin = plugin_type(None, config())
+    plugin = plugin_type(None, economy_config())
     plugin.client = FakeBridge(error=BridgeError("NOT_BOUND"))
     assert "没有完成绑定" in collect(plugin.checkin, Event())[0].text
 
 
 def test_unknown_backend_code_is_not_logged(plugin_type, caplog):
-    plugin = plugin_type(None, config())
+    plugin = plugin_type(None, economy_config())
     plugin.client = FakeBridge(error=BridgeError("SECRET_TOKEN"))
     assert "SECRET_TOKEN" not in collect(plugin.checkin, Event())[0].text
     assert "SECRET_TOKEN" not in caplog.text
@@ -185,3 +192,31 @@ def test_status_aliases_help_and_cleanup(plugin_type):
     assert "40%" in collect(plugin.help_command, Event())[0].text
     asyncio.run(plugin.terminate())
     assert plugin.client.closed
+
+
+@pytest.mark.parametrize("command", ["checkin", "robbery"])
+def test_economy_disabled_by_default_without_backend_request(plugin_type, command):
+    plugin = plugin_type(None, config())
+    plugin.client = FakeBridge()
+    result = collect(getattr(plugin, command), Event())[0]
+    assert "关闭" in result.text and "绑定和账号查询不受影响" in result.text
+    assert not plugin.client.calls
+
+
+@pytest.mark.parametrize("command", ["checkin", "robbery"])
+def test_backend_disable_is_authoritative_even_when_plugin_enabled(plugin_type, command):
+    plugin = plugin_type(None, economy_config())
+    plugin.client = FakeBridge(error=BridgeError("FEATURE_DISABLED"))
+    event = Event(mentions=[{"member_openid": "member-b"}])
+    result = collect(getattr(plugin, command), event)[0]
+    assert len(plugin.client.calls) == 1
+    assert "服务端尚未开放" in result.text
+    assert "成功" not in result.text
+
+
+def test_help_distinguishes_plugin_settings_from_backend_availability(plugin_type):
+    plugin = plugin_type(None, config())
+    message = collect(plugin.help_command, Event())[0].text
+    assert "个人设置 → 管理 QQ 绑定" in message
+    assert "签到：关闭" in message and "打劫：关闭" in message
+    assert "不代表服务端已开放" in message

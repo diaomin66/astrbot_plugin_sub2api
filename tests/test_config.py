@@ -12,7 +12,18 @@ def test_defaults_and_no_token_in_repr():
     settings = Settings.from_mapping(source)
     assert settings.policy["checkin"]["reward"] == {"min": "0.10", "max": "0.50"}
     assert settings.policy["robbery"]["cooldown_seconds"] == 3600
+    assert settings.policy["checkin"]["enabled"] is False
+    assert settings.policy["robbery"]["enabled"] is False
     assert settings.token not in repr(settings)
+
+
+def test_explicit_economy_settings_are_not_silently_overwritten():
+    source = config()
+    source["checkin"] = {"enabled": True}
+    source["robbery"] = {"enabled": True}
+    settings = Settings.from_mapping(source)
+    assert settings.policy["checkin"]["enabled"] is True
+    assert settings.policy["robbery"]["enabled"] is True
 
 
 def test_environment_token_wins(monkeypatch):
@@ -42,6 +53,7 @@ def test_reject_invalid_amount(value):
         ("bridge_token", "x" * 40 + "\r\nInjected: header"),
         ("qq_app_id", ""),
         ("platform_id", ""),
+        ("platform_id", "qq-main\x7f"),
         ("timeout_seconds", True),
     ],
 )

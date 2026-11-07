@@ -112,7 +112,11 @@ class Settings:
         platform_id = text(connection, "platform_id")
         if not ID_PATTERN.fullmatch(app_id):
             raise ConfigError("请配置 QQ 开放平台的 qq_app_id")
-        if not platform_id or len(platform_id) > 128 or any(ord(c) < 32 for c in platform_id):
+        if (
+            not platform_id
+            or len(platform_id) > 128
+            or any(ord(c) < 32 or ord(c) == 127 for c in platform_id)
+        ):
             raise ConfigError("请配置此机器人的 AstrBot platform_id，防止多机器人身份串用")
         timezone = text(checkin, "timezone", "Asia/Shanghai")
         try:
@@ -125,12 +129,12 @@ class Settings:
         policy = {
             "binding_ttl_seconds": integer(binding, "ttl_seconds", 600, 60, 3600),
             "checkin": {
-                "enabled": boolean(checkin, "enabled", True),
+                "enabled": boolean(checkin, "enabled", False),
                 "timezone": timezone,
                 "reward": amount_range(checkin, "reward", ("0.10", "0.50"), True),
             },
             "robbery": {
-                "enabled": boolean(robbery, "enabled", True),
+                "enabled": boolean(robbery, "enabled", False),
                 "success_probability": decimal_text(probability),
                 "success_amount": amount_range(robbery, "success", ("0.05", "0.20"), True),
                 "failure_amount": amount_range(robbery, "failure", ("0.01", "0.05"), False),

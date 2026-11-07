@@ -39,10 +39,10 @@ class Sub2APIPlugin(Star):
                 payload["email"] = binding_email(event.get_message_str())
             elif action == "checkin":
                 if not self.settings.policy["checkin"]["enabled"]:
-                    return "签到功能已关闭。"
+                    return "签到功能已关闭。请等待服务端完成资金安全验收，并由管理员确认开放。绑定和账号查询不受影响。"
             elif action == "robbery":
                 if not self.settings.policy["robbery"]["enabled"]:
-                    return "打劫功能已关闭。"
+                    return "打劫功能已关闭。请等待服务端完成资金安全验收，并由管理员确认开放。绑定和账号查询不受影响。"
                 payload["target"] = robbery_target(event, identity, At)
             result = await self.client.request(action, payload)
             return render(action, result)
@@ -96,9 +96,9 @@ class Sub2APIPlugin(Star):
         event.stop_event()
         message = (
             "Sub2API 账号互动\n"
-            "/绑定 邮箱：申请绑定，必须登录站内确认\n"
-            "/签到：每日领取一次随机额度\n"
-            "/打劫 @群友：双方均需绑定，成功获得额度，失败赔偿对方\n"
+            "/绑定 邮箱：申请绑定，登录站内「个人设置 → 管理 QQ 绑定」手动确认\n"
+            "/签到：功能开放后每日领取一次随机额度\n"
+            "/打劫 @群友：功能开放且双方已绑定后参与，成功获得额度，失败赔偿对方\n"
             "/我的账号：绑定、额度、签到及冷却信息\n"
             "/护盾 或 /冷却：查询保护和打劫剩余时间\n"
             "群内发送邮箱/查询余额会被群友看到。群聊、私聊身份需分别验证。"
@@ -107,6 +107,7 @@ class Sub2APIPlugin(Star):
             checkin = self.settings.policy["checkin"]
             robbery = self.settings.policy["robbery"]
             message += (
+                "\n以下仅为插件配置，不代表服务端已开放对应功能。"
                 f"\n签到：{'开启' if checkin['enabled'] else '关闭'}，"
                 f"奖励 {checkin['reward']['min']}～{checkin['reward']['max']}，按 {checkin['timezone']} 自然日。"
                 f"\n打劫：{'开启' if robbery['enabled'] else '关闭'}，成功概率 {float(robbery['success_probability']) * 100:g}%。"

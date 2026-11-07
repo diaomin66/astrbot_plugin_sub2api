@@ -24,7 +24,7 @@
     "description": "每日签到",
     "type": "object",
     "items": {
-      "enabled": {"description": "启用签到", "type": "bool", "default": true},
+      "enabled": {"description": "启用签到", "type": "bool", "default": false, "hint": "默认关闭。后端完成真实扣费、充值、预算和缓存一致性验收后才能开启；插件开关不能解锁后端功能。"},
       "timezone": {"description": "签到自然日时区", "type": "string", "default": "Asia/Shanghai", "hint": "由服务端时间计算日期，不使用用户或机器人提交的日期。"},
       "reward_min": {"description": "签到额度下限", "type": "string", "default": "0.10", "hint": "Sub2API 可用余额同单位，十进制字符串，最多 6 位小数；下限须大于零。"},
       "reward_max": {"description": "签到额度上限", "type": "string", "default": "0.50"}
@@ -34,7 +34,7 @@
     "description": "群内打劫与保护",
     "type": "object",
     "items": {
-      "enabled": {"description": "启用打劫", "type": "bool", "default": true},
+      "enabled": {"description": "启用打劫", "type": "bool", "default": false, "hint": "默认关闭。后端完成资金预留、并发转账和缓存一致性验收后才能开启；不要仅修改数据库功能标志绕过验收。"},
       "success_probability": {"description": "打劫成功概率（0～1）", "type": "string", "default": "0.40", "hint": "例如 0.40 表示 40%；由服务端安全随机数决定，插件不抽奖。"},
       "success_min": {"description": "成功夺取额度下限", "type": "string", "default": "0.05"},
       "success_max": {"description": "成功夺取额度上限", "type": "string", "default": "0.20", "hint": "从对方扣除并转给发起者，最多扣至对方余额为零。"},

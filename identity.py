@@ -64,7 +64,7 @@ def identify(event: Any, settings: Settings) -> Identity:
     if (
         not isinstance(message_id, str)
         or not 1 <= len(message_id) <= 512
-        or any(ord(char) < 32 for char in message_id)
+        or any(ord(char) < 32 or ord(char) == 127 for char in message_id)
         or (raw_id is not None and raw_id != message_id)
     ):
         raise InputError("消息缺少可靠的唯一 ID，已拒绝额度操作，请重新发送命令。")

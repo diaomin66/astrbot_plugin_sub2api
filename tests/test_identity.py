@@ -48,7 +48,7 @@ def test_identity_mismatch_rejected(field, value):
         identify(event, settings())
 
 
-@pytest.mark.parametrize("message_id", ["", None, "x" * 513, "msg\n1"])
+@pytest.mark.parametrize("message_id", ["", None, "x" * 513, "msg\n1", "msg\x7f1"])
 def test_missing_unique_message_id_rejected(message_id):
     with pytest.raises(InputError):
         identify(Event(message_id=message_id), settings())

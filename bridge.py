@@ -116,6 +116,8 @@ class BridgeClient:
                         if not isinstance(result.get("data"), dict):
                             raise protocol_error()
                         return result["data"]
+                except (aiohttp.ClientConnectorCertificateError, aiohttp.ClientConnectorSSLError) as exc:
+                    raise BridgeError("TLS_ERROR") from exc
                 except (aiohttp.ClientError, asyncio.TimeoutError) as exc:
                     if attempt == 1:
                         raise BridgeError("UNAVAILABLE") from exc

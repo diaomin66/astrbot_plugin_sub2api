@@ -30,6 +30,19 @@ def test_pending_binding_does_not_expose_email_or_internal_fields():
         },
     )
     assert "ABCD-EFGH" in result and "secret" not in result and "确认" in result
+    assert "个人设置 → 管理 QQ 绑定" in result and "手动输入" in result
+    assert "http" not in result
+
+
+def test_pending_account_points_to_modal_without_unverified_url():
+    result = render("account", {"state": "pending", "expires_in_seconds": 180})
+    assert "个人设置 → 管理 QQ 绑定" in result and "手动输入" in result
+    assert "http" not in result
+
+
+def test_tls_error_does_not_suggest_disabling_verification():
+    result = render_error(BridgeError("TLS_ERROR"))
+    assert "不要关闭证书校验" in result
 
 
 @pytest.mark.parametrize(

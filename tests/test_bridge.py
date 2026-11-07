@@ -1,7 +1,11 @@
 import asyncio
 import copy
+import ssl
 from contextlib import asynccontextmanager
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, Mock
 
+import aiohttp
 import pytest
 from aiohttp import web
 
@@ -47,6 +51,32 @@ def test_keys_stable_across_policy_updates_and_scoped_to_events():
     other["actor"]["app_id"] = "other-bot"
     assert idempotency_key("robbery", other) != key
     assert idempotency_key("checkin", original) != key
+
+
+@pytest.mark.parametrize(
+    "error_type", [aiohttp.ClientConnectorCertificateError, aiohttp.ClientConnectorSSLError]
+)
+def test_tls_failures_do_not_retry_or_disable_certificate_validation(error_type):
+    async def run():
+        client = BridgeClient(settings())
+        connection = SimpleNamespace(host="sub2api.example.test", port=443, is_ssl=True, ssl=True)
+        session = SimpleNamespace(
+            closed=False,
+            post=Mock(side_effect=error_type(connection, ssl.SSLError("test handshake failure"))),
+            close=AsyncMock(),
+        )
+        client._session = session
+        try:
+            with pytest.raises(BridgeError, match="TLS_ERROR"):
+                await client.request("account", payload())
+            session.post.assert_called_once()
+            assert "ssl" not in session.post.call_args.kwargs
+            assert session.post.call_args.kwargs["allow_redirects"] is False
+        finally:
+            await client.close()
+        session.close.assert_awaited_once()
+
+    asyncio.run(run())
 
 
 def test_authenticated_post_and_session_closed():

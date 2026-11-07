@@ -43,7 +43,7 @@ def render(action: str, data: dict) -> str:
             raise protocol_error()
         return (
             "已受理绑定申请。若邮箱对应账号存在，请登录你自己的 Sub2API 账号，"
-            "在「QQ 绑定」中核对并输入本次确认码后确认。\n"
+            "在「个人设置 → 管理 QQ 绑定」弹窗中核对申请，手动输入本次确认码后确认。\n"
             f"确认码：{code}\n有效期：{duration(ttl)}\n"
             "确认前不会获得任何账户权限；不要确认非本人发起的申请。\n"
             "确认后发送 /绑定状态 查询。群内邮箱可被其他成员看到。"
@@ -53,7 +53,10 @@ def render(action: str, data: dict) -> str:
         if state == "unbound":
             return "当前 QQ 身份尚未绑定。发送 /绑定 邮箱，再到 Sub2API 账号内确认。群聊与私聊身份需分别验证绑定。"
         if state == "pending":
-            return f"绑定待确认，请到 Sub2API 账号内完成确认。剩余：{duration(seconds(data, 'expires_in_seconds'))}。"
+            return (
+                "绑定待确认，请登录 Sub2API，在「个人设置 → 管理 QQ 绑定」弹窗中手动输入确认码。"
+                f"剩余：{duration(seconds(data, 'expires_in_seconds'))}。"
+            )
         if state != "bound" or type(data.get("checked_in_today")) is not bool:
             raise protocol_error()
         checkin = "已签到" if data["checked_in_today"] else "未签到"
@@ -88,7 +91,7 @@ def render(action: str, data: dict) -> str:
 
 ERROR_MESSAGES = {
     "NOT_BOUND": "你还没有完成绑定，请发送 /绑定 邮箱 并到站内确认。",
-    "BINDING_PENDING": "绑定尚未确认，请登录 Sub2API 完成确认。",
+    "BINDING_PENDING": "绑定尚未确认，请登录 Sub2API，在「个人设置 → 管理 QQ 绑定」弹窗中手动输入确认码。",
     "ALREADY_BOUND": "当前 QQ 身份已绑定；换绑或解绑请在 Sub2API 账号设置中操作。",
     "TARGET_NOT_BOUND": "对方还没有完成绑定，无法打劫。",
     "SAME_ACCOUNT": "不能打劫自己或绑定到同一 Sub2API 账号的身份。",
@@ -97,11 +100,15 @@ ERROR_MESSAGES = {
     "INSUFFICIENT_BALANCE": "你的可用额度不足以覆盖最低失败赔偿，无法发起打劫。",
     "TARGET_EMPTY": "对方没有可被打劫的额度。",
     "ACCOUNT_DISABLED": "账号不可用，请到 Sub2API 查看状态。",
-    "FEATURE_DISABLED": "该功能已被管理员关闭。",
+    "FEATURE_DISABLED": "服务端尚未开放该功能。仅开启插件开关不会生效，请等待服务端完成验收并开放。",
     "RATE_LIMITED": "操作过于频繁，请稍后再试。",
     "POLICY_REJECTED": "玩法配置超出服务端允许范围，请管理员检查配置。",
     "IDEMPOTENCY_CONFLICT": "同一消息的处理参数不一致，已拒绝重复执行。请查询账户状态。",
     "UNAUTHORIZED": "后端认证失败，请管理员检查专用 bridge 令牌及权限。",
+    "INVALID_REQUEST": "后端拒绝了请求格式，请管理员核对 bridge 接口版本和身份字段。",
+    "INVALID_IDEMPOTENCY_KEY": "后端拒绝了请求的幂等标识，请管理员检查接口兼容性，勿重复发起额度操作。",
+    "UNSUPPORTED_VERSION": "后端不支持当前 bridge 协议版本，请管理员核对插件与后端版本。",
+    "TLS_ERROR": "HTTPS 证书校验或 TLS 握手失败，已拒绝不安全连接。请管理员修复证书、域名或信任链，不要关闭证书校验；若此前已尝试操作，请先核对账户状态。",
     "BRIDGE_NOT_INSTALLED": "Sub2API 尚未安装 QQ bridge 接口，或接口地址不正确。",
     "REDIRECT_REFUSED": "接口发生重定向，已阻止令牌转发，请管理员检查地址。",
     "INVALID_RESPONSE": "后端响应格式异常，结果尚未确认，请查询账户状态，不要连续重试打劫。",
