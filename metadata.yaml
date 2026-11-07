@@ -1,0 +1,10 @@
+name: astrbot_plugin_sub2api
+display_name: Sub2API 账号与互动
+desc: QQ 官方机器人账号绑定、每日签到、打劫与冷却查询。需要 Sub2API bridge 扩展接口。
+version: v0.1.0
+author: Sub2API QQ Plugin Contributors
+repo: https://github.com/diaomin66/astrbot_plugin_sub2api
+astrbot_version: '>=4.29.1'
+support_platforms:
+  - qq_official
+  - qq_official_webhook
