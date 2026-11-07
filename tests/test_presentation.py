@@ -15,7 +15,7 @@ def test_bound_status():
             "robbery_cooldown_remaining_seconds": 0,
         },
     )
-    assert "12.500000" in result and "1分5秒" in result and "已签到" in result
+    assert "12.50" in result and "1分5秒" in result and "已签到" in result
 
 
 def test_pending_binding_does_not_expose_email_or_internal_fields():

@@ -19,6 +19,9 @@ ROUTES = {
     "checkin": "/checkin",
     "robbery": "/robbery",
     "recharge": "/recharge",
+    "reset_shields": "/admin/reset-shields",
+    "reset_cooldowns": "/admin/reset-cooldowns",
+    "stats": "/stats",
 }
 
 
